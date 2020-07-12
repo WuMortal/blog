@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.7.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言基于 DDD 传统分层架构实现。项目 github地址：https://github.com/WuMortal/DDDSample 这个分层架构是工作中项目正在使用的分层架构，使用了一段时间发现受益匪浅，所以整理好我对该分层架构的一些理解分享给大家，我对于该分层架构还处于学习阶段理解有误的地方请指出。本次会以一个案例来说明各个分层的作用以及他们之间的调用关系，还有本次的重点不在于DDD，因为这">
+<meta name="keywords" content="知识整理,DDD,C#,DotNetCore">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDD「领域驱动设计」分层架构初探">
+<meta property="og:url" content="https://blog.wigor.ltd/2019/04/21/DDDSamp/index.html">
+<meta property="og:site_name" content="Wigor&#39;s Blog">
+<meta property="og:description" content="前言基于 DDD 传统分层架构实现。项目 github地址：https://github.com/WuMortal/DDDSample 这个分层架构是工作中项目正在使用的分层架构，使用了一段时间发现受益匪浅，所以整理好我对该分层架构的一些理解分享给大家，我对于该分层架构还处于学习阶段理解有误的地方请指出。本次会以一个案例来说明各个分层的作用以及他们之间的调用关系，还有本次的重点不在于DDD，因为这">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/DDDSamp/master/doc/images/DDD_1.png">
+<meta property="og:updated_time" content="2020-07-12T15:25:00.950Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DDD「领域驱动设计」分层架构初探">
+<meta name="twitter:description" content="前言基于 DDD 传统分层架构实现。项目 github地址：https://github.com/WuMortal/DDDSample 这个分层架构是工作中项目正在使用的分层架构，使用了一段时间发现受益匪浅，所以整理好我对该分层架构的一些理解分享给大家，我对于该分层架构还处于学习阶段理解有误的地方请指出。本次会以一个案例来说明各个分层的作用以及他们之间的调用关系，还有本次的重点不在于DDD，因为这">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/WuMortal/DDDSamp/master/doc/images/DDD_1.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.wigor.ltd/2019/04/21/DDDSamp/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>DDD「领域驱动设计」分层架构初探 | Wigor's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wigor's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.wigor.ltd/2019/04/21/DDDSamp/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Wigor">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="https://avatars2.githubusercontent.com/u/25811487?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wigor's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">DDD「领域驱动设计」分层架构初探
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-04-21 18:34:21" itemprop="dateCreated datePublished" datetime="2019-04-21T18:34:21+00:00">2019-04-21</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-07-12 15:25:00" itemprop="dateModified" datetime="2020-07-12T15:25:00+00:00">2020-07-12</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing"><a href="/categories/领域驱动设计（DDD）/" itemprop="url" rel="index"><span itemprop="name">领域驱动设计（DDD）</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <a href="/2019/04/21/DDDSamp/#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">评论数：</span> <span class="post-comments-count valine-comment-count" data-xid="/2019/04/21/DDDSamp/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>基于 DDD 传统分层架构实现。<br>项目 github地址：<a href="https://github.com/WuMortal/DDDSample" target="_blank" rel="noopener">https://github.com/WuMortal/DDDSample</a></p>
+<p>这个分层架构是工作中项目正在使用的分层架构，使用了一段时间发现受益匪浅，所以整理好我对该分层架构的一些理解分享给大家，我对于该分层架构还处于学习阶段理解有误的地方请指出。本次会以一个案例来说明各个分层的作用以及他们之间的调用关系，还有本次的重点不在于<code>DDD</code>，因为这个我还未能完全理解，当然避免不了中间会涉及<code>DDD</code>的一些概念。</p>
+<h1 id="DDD-简单介绍"><a href="#DDD-简单介绍" class="headerlink" title="DDD 简单介绍"></a>DDD 简单介绍</h1><p><code>DDD</code> 什么？为什么使用 <code>DDD</code> ？</p>
+<p>相关文章：<a href="https://mp.weixin.qq.com/s?__biz=MzAwNTMxMzg1MA==&amp;mid=2654074749&amp;idx=1&amp;sn=ed26e35d0674ac821c999949f4fcf67c&amp;chksm=80dbd328b7ac5a3eb3aef40c1057b1339dd8918cd501a8fa982e83b9c8bd5ef148978eb82be8&amp;mpshare=1&amp;scene=1&amp;srcid=#rd" target="_blank" rel="noopener">架构为什么要以领域为核心</a></p>
+<p>下面是我的一些看法：</p>
+<p>关于这个问题有兴趣的可以自行百度，我相信网络上已经有大量的文章来说明这几个问题。我目前的理解是“业务”，是为了应对现在复杂和多变的业务，是一种开发理念。</p>
+<p>这里我就以一个小故事描述吧，有一天你接到任务要实现一个修改用户的功能，非常简单。使用传统三层架构我们会怎么写？</p>
+<ol>
+<li><p>先在 <code>DAL</code> 层添加 <code>UserDAL</code> 然后实现一个 <code>Update(UserEntity user)</code> 方法</p>
+</li>
+<li><p>接着在 <code>BLL</code> 中添加一个 <code>UserBLL</code> 在实现一个 <code>Update(string email,string pwd ...)</code> 方法。</p>
+</li>
+<li><p><code>UI</code> 层在调用，OK 完成任务下班回家。</p>
+</li>
+</ol>
+<p>接着你接到一个新的需求就是：需要增加用户修改信息的记录。</p>
+<p>你立马在 <code>BLL</code>的 <code>Update</code> 的方法里增加的用户修改信息的操作记录，完成需求。</p>
+<p>过了一段时间又来了一个需求：用户改了信息需要通知到管理员，并且用户每天只能修改 3 次信息。</p>
+<p>好了之后又经历了几波需求，你的代码也在不断的增加和变化，有一天你接收新的项目或者离开了，那么接收你项目的人完全不清楚这里的业务情况。因为 <code>Update</code> 方法并没有直接的反应出里的业务情况，代码目的不明确。代码变得难以维护。</p>
+<p>那么在 <code>DDD</code> 里这些应该怎么做呢？</p>
+<ol>
+<li><p>首先在方法的命名上做出更改既然业务是修改信息那么命名应该是 <code>Modify(string email,string pwd ...)</code></p>
+</li>
+<li><p>将用户修改信息的记录代码放在 <code>DomainService</code>（领域服务） 中，当然这里的类、方法命名要直接的反应出业务情况，如：<code>RecordUserModifyDomainService</code>。</p>
+</li>
+<li><p>对应的通知管理员的代码也应该放入 <code>DomainService</code> 中，<code>DomainService</code> 应该尽量简单一般只做一件事情。</p>
+</li>
+</ol>
+<h1 id="分层架构图"><a href="#分层架构图" class="headerlink" title="分层架构图"></a>分层架构图</h1><p><img src="https://raw.githubusercontent.com/WuMortal/DDDSamp/master/doc/images/DDD_1.png" alt="DDD 流程图"></p>
+<p>下面是关于 DDD 分层的一些描述，摘抄至之前看过的一片文章。</p>
+<blockquote>
+<ul>
+<li><p>Presentation 为表示层，负责向用户显示信息和解释用户命令。这里指的用户可以是另一个计算机系统，不一定是使用用户界面的人。</p>
+</li>
+<li><p>Application 为应用层，定义软件要完成的任务，并且指挥表达领域概念的对象来解决问题。这一层所负责的工作对业务来说意义重大，也是与其它系统的应用层进行交互的必要渠道。应用层要尽量简单，不包含业务规则或者知识，而只为下一层中的领域对象协调任务，分配工作，使它们互相协作。它没有反映业务情况的状态，但是却可以具有另外一种状态，为用户或程序显示某个任务的进度。</p>
+</li>
+<li><p>Domain 为领域层（或模型层），负责表达业务概念，业务状态信息以及业务规则。尽管保存业务状态的技术细节是由基础设施层实现的，但是反映业务情况的状态是由本层控制并且使用的。领域层是业务软件的核心，领域模型位于这一层。</p>
+</li>
+<li><p>Infrastructure 层为基础实施层，向其他层提供通用的技术能力：为应用层传递消息，为领域层提供持久化机制，为用户界面层绘制屏幕组件，等等。基础设施层还能够通过架构框架来支持四个层次间的交互模式。</p>
+</li>
+</ul>
+</blockquote>
+<h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>如上图每个层中其实对应着具体的项，下面将对每个项进行说明。</p>
+<ol>
+<li><p><code>Domain</code> 层分为：<code>Domain</code> 、<code>DomainService</code> 和 <code>IDomainService</code>。</p>
+<ul>
+<li>首先 <code>Domain</code> 中包含有 <code>Entity</code> 和 <code>IRepository</code> ，<code>Entity</code> 是你的实体一般对于数据库表但是在某些情况下你也可以冗余一些字段。<code>IRepository</code> 仓储的方法的定义，该层不会有具体的实现。</li>
+<li><code>DomainService</code> 和 <code>IDomainService</code>，<code>IDomainService</code> 只是负责表达业务的概念，<code>DomainService</code> 里才是具体业务逻辑代码。在这一层的代码命名上需要注意，我们的命名一般要能直接描述出该代码业务的功能。这里可以参考 <code>DDD</code> 的几个概念：通用语言、领域。</li>
+</ul>
+</li>
+<li><p><code>Infrastructure</code> 层分为：<code>Repository</code> 和 <code>CrossCutting</code>：</p>
+<ul>
+<li><code>Repository</code> 里面就是 <code>Domain</code> 里 <code>IRepository</code> 的具体实现。项目中 RepositoryExtensions.cs 是一个扩展类，将所有的仓储注入容器中，方便我们在项目中使用 <code>DI</code>（依赖注入）。</li>
+<li><code>CrossCutting</code> 主要是提供一些各个层通用的东西，如一些枚举、扩展方法、工具类等等。</li>
+</ul>
+</li>
+<li><p><code>Application</code> 层分为：<code>Application</code> 和 <code>ApplicationContract</code>。</p>
+<ul>
+<li><code>ApplicationContract</code> 里主要包含 <code>DTO</code>、<code>ViewModel</code>、<code>IXXXService</code>。<code>DTO</code> 是数据传输对象，主要负责给展现层提供展示数据，<code>DTO</code> 里应该只有值类型存在，当然根据具体情况也可存在其他的 <code>DTO</code> 。<code>ViewModel</code> 用于展现层传入的模型，简单的说 <code>DTO</code> 输出，<code>ViewModel</code> 输入。<code>IXXXService</code> 就是应用层的方法定义。</li>
+<li><code>Application</code> 里面主要是用于 实现 <code>ApplicationContract</code> 里的 <code>IXXXService</code>，还有 <code>Entity</code> 和 <code>DTO</code> 的映射也属于该层的工作。ApplicationExtensions.cs 扩展方法是用于实现 <code>DI</code>。</li>
+</ul>
+</li>
+<li><p><code>Presentation</code> 层里目前只有一个 WebAPI。展现层的代码一般有：对传入模型的校验。</p>
+</li>
+</ol>
+<h1 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h1><p>本次以一个用户注册的流程为案例，来简单说明如何使用该分层架构进行项目开发。</p>
+<ol>
+<li>首先在 <code>Domain</code> 中建一个 UserEntity，有 Id、Mobile、Name、Age、RegisterDateTime 属性。接着建立 IUserRepository，编写需要定义的方法，这里我定义了一个 GetByMobile(string mobile) 方法。</li>
+</ol>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">Table(Name = <span class="meta-string">"User"</span>)</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserEntity</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Column(IsIdentity = true)</span>]</span><br><span class="line">    <span class="keyword">public</span> Guid Id &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Mobile &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> DateTime RegisterDateTime &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; = DateTime.Now;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public interface IUserRepository : IBasicRepository&lt;UserEntity, Guid&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">Task&lt;UserEntity&gt; <span class="title">GetByMobileAsync</span>(<span class="params"><span class="keyword">string</span> mobile</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>IBasicRepository 是使用了 <a href="https://github.com/2881099/FreeSql" target="_blank" rel="noopener">FreeSql</a>，你们可以自己实现。</p>
+<ol start="2">
+<li>然后在 Repository 中建 UserRepository 类，该类继承 IUserRepository 并且实现该接口的所有方法。</li>
+</ol>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public class UserRepository : GuidRepository&lt;UserEntity&gt;, IUserRepository</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UserRepository</span>(<span class="params">IFreeSql freeSql</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">freeSql</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> Implementation of IUserRepository</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task&lt;UserEntity&gt; <span class="title">GetByMobileAsync</span>(<span class="params"><span class="keyword">string</span> mobile</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">await</span> <span class="keyword">this</span>.Where(u =&gt; u.Mobile == mobile).FirstAsync();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>仓储基本好了后就是 <code>Application</code> ，首先需要在 ApplicationContract 中建 UsesDTO，根据业务情况你也可以建 UserSimpleDTO 、UserDetailDTO。<code>DTO</code> 里包含你需要返回的数据，我这里有 Id、Name、Mobile、Age、ProfilePhotoSrc（头像地址根据 Id 拼接，这里我用 imgage/Id.png 的格式）。</li>
+</ol>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserDTO</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> Guid Id &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Mobile &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> ProfilePhotoSrc &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>添加好 UserDTO 后，然后添加 IUserService.cs 接口，接着在 Application 的 Service 中添加对应的 UserService，并且 UserService 继承 IUserService。</li>
+</ol>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IUserService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 用户注册</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="userName"&gt;</span>用户名<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="mobile"&gt;</span>手机号<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="age"&gt;</span>年龄<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function">Task&lt;<span class="keyword">bool</span>&gt; <span class="title">Register</span>(<span class="params"><span class="keyword">string</span> userName, <span class="keyword">string</span> mobile, <span class="keyword">int</span> age</span>)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function">List&lt;UserDTO&gt; <span class="title">GetList</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserService</span> : <span class="title">IUserService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">readonly</span> IUserRepository _userRepository;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UserService</span>(<span class="params">IUserRepository userRepository</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _userRepository = userRepository;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> Implementation of IUserService</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 用户注册</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="userName"&gt;</span>用户名<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="mobile"&gt;</span>手机<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="age"&gt;</span>年龄<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task&lt;<span class="keyword">bool</span>&gt; <span class="title">Register</span>(<span class="params"><span class="keyword">string</span> userName, <span class="keyword">string</span> mobile, <span class="keyword">int</span> age</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> userEnity = <span class="keyword">await</span> _userRepository.GetByMobileAsync(mobile);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (userEnity != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> addUserEntity = <span class="keyword">new</span> UserEntity</span><br><span class="line">        &#123;</span><br><span class="line">            Id = Guid.NewGuid(),</span><br><span class="line">            Age = age,</span><br><span class="line">            Name = userName,</span><br><span class="line">            Mobile = mobile</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">await</span> _userRepository.InsertAsync(addUserEntity) != <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;UserDTO&gt; <span class="title">GetList</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> _userRepository.Select</span><br><span class="line">            .ToList().ToDTOList();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li><p>UserServcie 是对应展现层的控制器 UserController —&gt; IUserService。</p>
+</li>
+<li><p>最后展现层的 WebAPI 只需要注入 IUserService，就可以开心的使用了。</p>
+</li>
+</ol>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">HttpPost</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task&lt;IActionResult&gt; <span class="title">Post</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> second = DateTime.Now.Second.ToString(<span class="string">"00"</span>);</span><br><span class="line">    <span class="keyword">bool</span> isSuccess = <span class="keyword">await</span> _userService.Register(<span class="string">"Wigor"</span>, <span class="string">$"188888888<span class="subst">&#123;second&#125;</span>"</span>, <span class="number">22</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> Ok(isSuccess);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>就这样这个简单的案例就完成了，你可以参考着上面 说明 对比着去看看，当然这里有一些东西并没有体现，如 DomainServie，如果按照 DDD 来说还有 值对象、聚合、通用语言……，对于「通用语言」的话其实上面的小故事就体现出了一点。</p>
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>就 DDD 而言我这里还有很多东西都没有交代，今后有时间的话会慢慢的写出来。还有我也是在学习 DDD 所以有错的地方请指出，望多多包涵。</p>
+<p>在使用这套分层架构的时候碰到了许多问题，这里还要感谢老大的指导，为我解答疑问。</p>
+<p>最后附上<a href="https://book.douban.com/subject/25844633/" target="_blank" rel="noopener">《实现领域驱动设计》</a>中的一句话：</p>
+<blockquote>
+<p>我认为不管使用什么技术，我们的目的都是提供业务价值。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+	
+		
+	
+      
+	   
+
+		 <div>    
+          
+          <blockquote class="post-copyright">
+             <div class="post-copyright-link">
+              <strong>本文作者：</strong>
+              <a href="/" title="欢迎访问 Wigor 的个人博客">Wigor</a>
+            </div>
+
+            <div class="post-copyright-link">
+              <strong>本文标题：</strong>
+              <a href="https://blog.wigor.ltd/2019/04/21/DDDSamp/" title="DDD「领域驱动设计」分层架构初探">DDD「领域驱动设计」分层架构初探</a>
+            </div>
+
+            <div class="post-copyright-link">
+              <strong>本文链接：</strong>
+              <a href="https://blog.wigor.ltd/2019/04/21/DDDSamp/" title="DDD「领域驱动设计」分层架构初探">https://blog.wigor.ltd/2019/04/21/DDDSamp/</a>
+            </div>
+
+            <div class="post-copyright-date">
+                <strong>发布时间： </strong>2019年4月21日 - 18时04分
+            </div>  
+
+            <div class="post-copyright-license">
+              <strong>版权声明： </strong>
+              本文由 Wigor 原创。
+            </div>
+          </blockquote>
+        
+      </div>
+      
+        <div class="post-tags">
+          
+            <a href="/tags/知识整理/" rel="tag"># 知识整理</a>
+          
+            <a href="/tags/DDD/" rel="tag"># DDD</a>
+          
+            <a href="/tags/C/" rel="tag"># C#</a>
+          
+            <a href="/tags/DotNetCore/" rel="tag"># DotNetCore</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/03/Git-忽略文件夹中，指定某个文件或文件夹提交/" rel="next" title="Git 忽略文件夹中，指定某个文件或目录提交">
+                <i class="fa fa-chevron-left"></i> Git 忽略文件夹中，指定某个文件或目录提交
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/10/gitlab-cicd-iis/" rel="prev" title="使用 Gitlab CI/CD 实现自动化发布站点到 IIS">
+                使用 Gitlab CI/CD 实现自动化发布站点到 IIS <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars2.githubusercontent.com/u/25811487?s=460&v=4" alt="Wigor">
+            
+              <p class="site-author-name" itemprop="name">Wigor</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">10</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">6</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">16</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/WuMortal" title="GitHub &rarr; https://github.com/WuMortal" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:wumortal@Outlook.com" title="E-Mail &rarr; mailto:wumortal@Outlook.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-E-Mail"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DDD-简单介绍"><span class="nav-number">2.</span> <span class="nav-text">DDD 简单介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分层架构图"><span class="nav-number">3.</span> <span class="nav-text">分层架构图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#说明"><span class="nav-number">4.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#案例"><span class="nav-number">5.</span> <span class="nav-text">案例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结语"><span class="nav-number">6.</span> <span class="nav-text">结语</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Wigor</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/schemes/muse.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+<script src="//cdn1.lncld.net/static/js/3.11.1/av-min.js"></script>
+
+
+
+<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+<script>
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#comments',
+    verify: true,
+    notify: false,
+    appId: 'Lenj72VxE2lnKUyj4jukeMH9-gzGzoHsz',
+    appKey: 'Gu7nwtGgKRgO9kSgoQQOpP7s',
+    placeholder: '想对我对我说点啥？',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+</script>
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function(i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function(e) {
+        var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('复制成功');
+          else $(this).text('复制失败');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function(e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function() {
+          $b.text('复制');
+        }, 300);
+      }).append(e);
+    })
+  </script>
+
+
+  
+
+</body>
+</html>

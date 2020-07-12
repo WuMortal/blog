@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.7.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言大家好，我最近在想如何提交代码的时候自动的打包 NuGet 然后发布到 AzureDevOps 中的 Artifacts，在这个过程中踩了很多坑，也走了很多弯路，所以这次篇文章就是将我探索的结果和我遇到的一些问题整理分享给大家。  我的上一篇关于 CI/CD 的文章《使用 Gitlab CI/CD 实现自动化发布站点到 IIS》 中是使用脚本的形式实现的，后来有园友在下面评论说可以使用 Cak">
+<meta name="keywords" content="git,知识整理,DotNetCore,CI&#x2F;CD,AzureDevOps">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上">
+<meta property="og:url" content="https://blog.wigor.ltd/2019/06/27/cake-push-nuget-to-Artifacts/index.html">
+<meta property="og:site_name" content="Wigor&#39;s Blog">
+<meta property="og:description" content="前言大家好，我最近在想如何提交代码的时候自动的打包 NuGet 然后发布到 AzureDevOps 中的 Artifacts，在这个过程中踩了很多坑，也走了很多弯路，所以这次篇文章就是将我探索的结果和我遇到的一些问题整理分享给大家。  我的上一篇关于 CI/CD 的文章《使用 Gitlab CI/CD 实现自动化发布站点到 IIS》 中是使用脚本的形式实现的，后来有园友在下面评论说可以使用 Cak">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/2.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/3.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/4.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/5.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/6.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/7.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/8.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/9.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/10.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/11.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/12.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/13.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/13_1.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/14.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/15.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/16.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/18.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/19.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/20.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/21.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/22.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/23.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/24.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/25.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/26.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/27.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/28.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/29.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/30.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/31.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/32.png">
+<meta property="og:updated_time" content="2020-07-12T15:25:00.950Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上">
+<meta name="twitter:description" content="前言大家好，我最近在想如何提交代码的时候自动的打包 NuGet 然后发布到 AzureDevOps 中的 Artifacts，在这个过程中踩了很多坑，也走了很多弯路，所以这次篇文章就是将我探索的结果和我遇到的一些问题整理分享给大家。  我的上一篇关于 CI/CD 的文章《使用 Gitlab CI/CD 实现自动化发布站点到 IIS》 中是使用脚本的形式实现的，后来有园友在下面评论说可以使用 Cak">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/2.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.wigor.ltd/2019/06/27/cake-push-nuget-to-Artifacts/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上 | Wigor's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wigor's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.wigor.ltd/2019/06/27/cake-push-nuget-to-Artifacts/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Wigor">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="https://avatars2.githubusercontent.com/u/25811487?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wigor's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-06-27 10:53:48" itemprop="dateCreated datePublished" datetime="2019-06-27T10:53:48+00:00">2019-06-27</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-07-12 15:25:00" itemprop="dateModified" datetime="2020-07-12T15:25:00+00:00">2020-07-12</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing"><a href="/categories/CI-CD/" itemprop="url" rel="index"><span itemprop="name">CI/CD</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <a href="/2019/06/27/cake-push-nuget-to-Artifacts/#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">评论数：</span> <span class="post-comments-count valine-comment-count" data-xid="/2019/06/27/cake-push-nuget-to-Artifacts/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>大家好，我最近在想如何提交代码的时候自动的打包 NuGet 然后发布到 <code>AzureDevOps</code> 中的 <code>Artifacts</code>，在这个过程中踩了很多坑，也走了很多弯路，所以这次篇文章就是将我探索的结果和我遇到的一些问题整理分享给大家。 </p>
+<p>我的上一篇关于 <code>CI/CD</code> 的文章<a href="https://www.cnblogs.com/AMortal/p/10845783.html" target="_blank" rel="noopener">《使用 Gitlab CI/CD 实现自动化发布站点到 IIS》</a> 中是使用脚本的形式实现的，后来有<a href="https://www.cnblogs.com/linianhui/" target="_blank" rel="noopener">园友</a>在下面评论说可以使用 <a href="https://cakebuild.net/" target="_blank" rel="noopener">Cake（C# Make）</a> 这个工具来实现其中的功能，所以本次就不用了脚本了。有时间会使用 Cake 对它进行改造。</p>
+<p>整体思路：</p>
+<ol>
+<li><p>首先介绍下 <code>Cake</code>、<code>AzureDevops Pipelines/Artifacts</code> 怎么使用 </p>
+</li>
+<li><p>接着配置 AzureDevops Pipelines</p>
+</li>
+<li><p>创建 AzureDevops Artifacts （NuGet 服务端）</p>
+</li>
+<li><p>AzureDevops 配置 PAT (Personal Access Tokens) 和 Pipelines 所需的 Variables（变量）</p>
+</li>
+<li><p>Cake 增加打包、推送 NuGet 包代码。</p>
+</li>
+<li><p>最后查看运行结果</p>
+</li>
+</ol>
+<p>使用到的工具及版本：</p>
+<blockquote>
+<p>dotnet core 2.2</p>
+<p>cake 0.33.0</p>
+<p>PowerShell、NuGet、CredentialProvider</p>
+<p>AzureDevops Pipelines 和 AzureDevops Artifacts</p>
+</blockquote>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ul>
+<li><p>Cake 的全称是 <code>C# Make</code>，它是一个跨平台的自动化构建系统，基于 C# DSL，所以可以用我们熟悉的 C# 语言来替换掉我们之前使用脚本的构建方式。使用它我们能非常方便的编译代码，复制文件和文件夹，当然还可以运行单元测试以以确保我们的代码没有问题，我们本次的 NuGet 发布到 Artifacts 它占很重要的地位。</p>
+</li>
+<li><p>AzureDevops 的前身是 VSTS，它提供了 Repos、Pipelines、Boards、Test Plans、Artifacts：</p>
+<ul>
+<li>Repos 提供 Git 存储库，用于代码的源代码控制，你可以直接引入你在 GitHub 上的仓储。</li>
+<li>Pipelines 提供构建和发布服务，以支持应用程序的持续集成和交付（CI/CD）</li>
+<li>Boards 提供了一套 Agile 工具，支持使用看板和 Scrum 方法规划和跟踪工作，代码缺陷管理等等，类似的工具有腾讯的 <a href="https://www.tapd.cn/" target="_blank" rel="noopener">TAPD</a>、阿里的 <a href="https://www.aliyun.com/product/yunxiao" target="_blank" rel="noopener">云效</a>、华为云的 <a href="https://www.huaweicloud.com/devcloud/" target="_blank" rel="noopener">DevCloud</a> 等等。</li>
+<li>Test Plans 提供了多种测试应用程序的工具，包括手动/探索性测试和持续测试</li>
+<li>Artifacts 允许团队从公共和私人来源共享 Maven，npm 和 NuGet 包。<br>协作工具，包括可自定义的团队仪表板和可配置的小部件，以共享信息，进度和趋势; 用于共享信息的内置 wiki; 可配置的通知等。</li>
+</ul>
+</li>
+<li><p>CredentialProvider 是凭据提供程序，当我们进行 NuGet Push 时需要进行身份验证，只需要将它放在 NuGet 程序的下即可。</p>
+</li>
+</ul>
+<h1 id="Cake-安装和使用"><a href="#Cake-安装和使用" class="headerlink" title="Cake 安装和使用"></a>Cake 安装和使用</h1><p>本次案例我已经发布到 GitHub 上了：<a href="https://github.com/WuMortal/CakePushNuGet.Example" target="_blank" rel="noopener">https://github.com/WuMortal/CakePushNuGet.Example</a></p>
+<p>安装：这里我使用 dotnet core 进行演示，cake 还支持 .NET Framework、Mono。首先我们需要安装 cake，借助 dotnet tool 这个命令。<br><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dotnet tool install --global cake.tool --version 0.33.0</span><br></pre></td></tr></table></figure></p>
+<p>安装成功会出现如下提示：</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/2.jpg" alt="cake 安装"></p>
+<p>cake 的使用方式非常简单，而且还是 C# 语法相信应该是很容易就能理解的。</p>
+<p>这里首先定义了一个 target 变量，它里面保存的就是我们将要执行的 Task（任务）的名称。接着可以看到在在代码块中定义了许多的 Task，这里就是具体需要执行的 “任务”，第一个任务是还原项目的依赖，其实核心代码就一行 <code>DotNetCoreRestore(solution);</code>，第二个任务是生成项目，需要说明的是第三个任务其实是将前面两个任务整合到一起。你也可以在中第二个任务 <code>.IsDependentOn (&quot;Restore&quot;)</code> 调用第一个任务，当然 <code>var target = Argument (&quot;target&quot;, &quot;Demo&quot;);</code> 就需要改为 <code>var target = Argument (&quot;target&quot;, &quot;Build&quot;);</code> 了，这个看个人喜好了。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/3.jpg" alt="cake 安装"></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> rootPath = <span class="string">"../"</span>;   <span class="comment">//根目录</span></span><br><span class="line"><span class="keyword">var</span> srcPath = rootPath + <span class="string">"src/"</span>;    </span><br><span class="line"><span class="keyword">var</span> solution = srcPath + <span class="string">"Wigor.CakePushNuGet.Example.sln"</span>;   <span class="comment">//解决方案文件</span></span><br><span class="line"><span class="comment">//需要执行的目标任务</span></span><br><span class="line"><span class="keyword">var</span> target = Argument (<span class="string">"target"</span>, <span class="string">"Demo"</span>);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"Restore"</span>)</span><br><span class="line">  .Description (<span class="string">"还原项目依赖"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    <span class="comment">//Restore</span></span><br><span class="line">    Information (<span class="string">"开始执行还原项目依赖任务"</span>);</span><br><span class="line">    DotNetCoreRestore (solution);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"Build"</span>)</span><br><span class="line">  .Description (<span class="string">"编译项目"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"开始执行编译生成项目任务"</span>);</span><br><span class="line">    <span class="comment">//Build</span></span><br><span class="line">    DotNetCoreBuild (solution, <span class="keyword">new</span> DotNetCoreBuildSettings &#123;</span><br><span class="line">        NoRestore = <span class="literal">true</span>,   <span class="comment">//不执行还原，上一步已经还原过了</span></span><br><span class="line">        Configuration = <span class="string">"Release"</span></span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行的任务</span></span><br><span class="line">Task (<span class="string">"Demo"</span>)</span><br><span class="line">  .IsDependentOn (<span class="string">"Restore"</span>)    <span class="comment">//1. 执行上面的 Restore 任务</span></span><br><span class="line">  .IsDependentOn (<span class="string">"Build"</span>)      <span class="comment">//2. 需要执行 上面的 Build 任务</span></span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"所有任务完成"</span>);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">//运行目标任务 Demo</span></span><br><span class="line">RunTarget (target);</span><br></pre></td></tr></table></figure>
+<p>cake 编写好后我们就可以尝试运行它，这里我的 cake 路径是 build/build.cake 大家可以根据具体情况更改 ，命令如下：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dotnet cake build/build.cake -verbosity=diagnostic</span><br></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/4.jpg" alt="cake 运行"></p>
+<p>可以看到这里的 cake 已经运行成功了，它会将我们每个任务运行的结果和信息显示在控制台上。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/5.jpg" alt="cake 运行"></p>
+<p>到这里相信大家对 cake 是干什么了有点了解吧，有关它跟多的使用方法可以访问官网：<a href="https://cakebuild.net/" target="_blank" rel="noopener">https://cakebuild.net/</a></p>
+<h1 id="AzureDevops-Pipelines-使用"><a href="#AzureDevops-Pipelines-使用" class="headerlink" title="AzureDevops Pipelines 使用"></a>AzureDevops Pipelines 使用</h1><p>首先你需要一个 Microsoft 账号或者 GitHub 账号，登录地址为：<a href="https://dev.azure.com" target="_blank" rel="noopener">https://dev.azure.com</a>，登录之后你需要创建一个项目，这里我已经创建好一个项目了，首先我们点击 Pipelines 选择 Builds，之后会出现如下界面，点击 New Pipeline。然后跟着我下面图片的步骤一步一步来就行。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/6.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>如果你的仓储就在 AzureDevops上那么直接选 Azure Repos Git 就行。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/7.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>这里你的账号是 GitHub 授权登录的话会先跳转到授权界面可能会跳转多次，同意即可。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/8.jpg" alt="AzureDevops Pipelines 使用"><br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/9.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>删除我选中的代码，因为我不打算用 AzureDevops Pipelines 的脚本来执行本次操作，它做的只是提供我们 cake 运行的环境。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/10.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>更换为如下脚本，<code>PowerShell.exe -file ./cake.ps1</code> 是指使用 PowerShell 运行我们的 cake.ps1 文件，关于 cake.ps1 文件后面会介绍，这里我们先这样写，接着点击 <code>Save and run</code>。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/11.jpg" alt="AzureDevops Pipelines 使用"></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">trigger:</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">master</span></span><br><span class="line"></span><br><span class="line"><span class="attr">pool:</span></span><br><span class="line"><span class="attr">  vmImage:</span> <span class="string">'windows-latest'</span></span><br><span class="line"></span><br><span class="line"><span class="attr">steps:</span></span><br><span class="line"><span class="attr">- script:</span> <span class="string">PowerShell.exe</span> <span class="bullet">-file</span> <span class="string">./cake.ps1</span></span><br><span class="line"><span class="attr">  displayName:</span> <span class="string">'Push NuGet Package'</span></span><br></pre></td></tr></table></figure>
+<p>可以看到问们管道的运行出现了错误，那是因为我们上面在运行了 cake.ps1 这个脚本，但是我们现在还没有创建这个脚本。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/12.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>回到我们的项目中，将 AzureDevops Pipelines 创建的 <code>azure-pipelines.yml</code> 文件 pull 到我们本地。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/13.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>接着我们编写我们下面缺少的 cake.ps1 文件，它做的事情就是将我们之前手动在 cmd 中运行的命令放入了一个 PowerShell 脚本文件中，Linux 平台的话就编写一个 shell 脚本。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/13_1.jpg" alt="AzureDevops Pipelines 使用"></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Install cake.tool</span></span><br><span class="line">dotnet tool install --global cake.tool --version 0.33.0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出将要执行的命命令</span></span><br><span class="line">Write-Host <span class="string">"dotnet cake build\build.cake -verbosity=diagnostic"</span> -ForegroundColor GREEN</span><br><span class="line"></span><br><span class="line">dotnet cake build\build.cake -verbosity=diagnostic</span><br></pre></td></tr></table></figure>
+<p>尝试项目根目录下运行这个脚本，在 cmd 中执行 <code>powershell .\cake.ps1</code>，下面报了一个错。<br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/14.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>我们只需要以管理员身份运行 PowerShell 然后执行 <code>set-ExecutionPolicy RemoteSigned</code> 即可</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/15.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/16.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>然后再次运行 <code>powershell .\cake.ps1</code> 或者命令，可以看到正确的输出了</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/18.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>OK，这次我们推送（git push）下代码，在到 AzureDevops Pipelines 看看我们执行结果。<br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/19.jpg" alt="AzureDevops Pipelines 使用"></p>
+<p>点进去可以看到整个执行的过程，如果报错了也可以从这里看到出错的信息</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/20.png" alt="AzureDevops Pipelines 使用"></p>
+<blockquote>
+<p>如果是 powershell 报错 AzureDevops Pipelines  是不会显示执行失败的，如果没得到你想要的结果你就需要点开认真的分析你的脚本了。</p>
+</blockquote>
+<h1 id="AzureDevops-Artifacts-使用"><a href="#AzureDevops-Artifacts-使用" class="headerlink" title="AzureDevops Artifacts 使用"></a>AzureDevops Artifacts 使用</h1><p>前面已经讲过了如果使用 cake 和 在 AzureDevops Pipelines 下执行 cake。下面我们需要创建一个 NuGet Repository，这里我使用 AzureDevops 提供的 Artifacts。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/21.png" alt="AzureDevops Artifacts 使用"><br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/22.jpg" alt="AzureDevops Artifacts 使用"><br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/23.png" alt="AzureDevops Artifacts 使用"></p>
+<p>这里面会用的就是 <code>package source URL</code> 和下面命令中的 -ApiKey 中的 <code>AzureDevOps</code>，还有这里我们需要将 <code>NuGet + Credentials Provider</code> 下载到我们的本地，如果你的运行环境是 Linux 或其他可以在 <code>microsoft/artifacts-credprovider</code> 的 GitHub 上获取对应平台的这两个包， <a href="https://github.com/Microsoft/artifacts-credprovider" target="_blank" rel="noopener">点击查看 GitHub 地址</a>。</p>
+<h1 id="创建-PAT-Personal-Access-Tokens"><a href="#创建-PAT-Personal-Access-Tokens" class="headerlink" title="创建 PAT (Personal Access Tokens)"></a>创建 PAT (Personal Access Tokens)</h1><p>上面说过了我们推送 NuGet 包到 Artifacts 时候是需要为两个参数提供指的的 -UserName 和 -Password，这里的 UserName 我们可以随意填，但是 Password 填的的是我们创建的 PAT。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/24.png" alt="APersonal Access Tokens 使用"><br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/25.jpg" alt="Personal Access Tokens 使用"></p>
+<p>这是选择我们 PAT 所拥有的权限，需要点击 <code>Show all scopes</code> 找到 <code>Packaging</code> 勾选 <code>Red,wirte,&amp; manage</code>。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/26.png" alt="Personal Access Tokens 使用"></p>
+<p>我们可以看到我们的 PAT ，需要注意的是这个 token 只会出现一次，你需要将它保存好，如果忘记了，那么可以点击 <code>Regenerate</code> 重新获取 token。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/27.png" alt="Personal Access Tokens 使用"></p>
+<h1 id="AzureDevops-Pipelines-添加变量"><a href="#AzureDevops-Pipelines-添加变量" class="headerlink" title="AzureDevops Pipelines 添加变量"></a>AzureDevops Pipelines 添加变量</h1><p>在 <a href="https://www.cnblogs.com/AMortal/p/10845783.html" target="_blank" rel="noopener">上一篇文章</a> 中我说过了为什么需要变量，这里就不重复了，有兴趣的可以看看。下面开始添加我们需要的变量。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/28.png" alt="添加变量 使用"><br><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/29.jpg" alt="A添加变量 使用"></p>
+<p>我们需要添加的变量有四个，分别是 <code>NUGET_REPOSITORY_API_URL</code>、<code>NUGET_REPOSITORY_API_KEY</code>、<code>USERNAME</code>、<code>PASSWORD</code>。</p>
+<ul>
+<li><p>NUGET_REPOSITORY_API_URL：就是我们在创建 AzureDevops Artifacts 后出现的 <code>package source URL</code>。</p>
+</li>
+<li><p>NUGET_REPOSITORY_API_KEY：就是那个 -ApiKey 参数的值 <code>AzureDevOps</code>。</p>
+</li>
+<li><p>USERNAME：这个上面说过了可以随便填。</p>
+</li>
+<li><p>PASSWORD：这个就是之前创建的 PAT。</p>
+</li>
+</ul>
+<p>点击保存（Save &amp; queue）或者 Ctrl + s 保存。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/30.jpg" alt="添加变量 使用"></p>
+<h1 id="添加-NuGet-Tool-cake-和-NuGet-exe、Credentials-Provider"><a href="#添加-NuGet-Tool-cake-和-NuGet-exe、Credentials-Provider" class="headerlink" title="添加 NuGet.Tool.cake 和 NuGet.exe、Credentials Provider"></a>添加 NuGet.Tool.cake 和 NuGet.exe、Credentials Provider</h1><p>这里为已经封装过了的工具类包含了打包和推送方法,地址：<a href="https://github.com/WuMortal/CakePushNuGet.Example/blob/master/build/nuget.tool.cake" target="_blank" rel="noopener">NuGet.Tool.cake</a></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Collections.Generic;</span><br><span class="line"><span class="keyword">using</span> System.Linq;</span><br><span class="line"><span class="keyword">using</span> Cake.Common.Tools.DotNetCore;</span><br><span class="line"><span class="keyword">using</span> Cake.Common.Tools.DotNetCore.Pack;</span><br><span class="line"><span class="keyword">using</span> Cake.Common.Tools.NuGet;</span><br><span class="line"><span class="keyword">using</span> Cake.Common.Tools.NuGet.List;</span><br><span class="line"><span class="keyword">using</span> Cake.Core;</span><br><span class="line"><span class="keyword">using</span> NuGet.Packaging;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NuGetTool</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> ICakeContext CakeContext &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> RepositoryApiUrl &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> RepositoryApiKey &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> UserName &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Password &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> NuGetListSettings ListSettings =&gt; <span class="keyword">new</span> NuGetListSettings &#123;</span><br><span class="line">        AllVersions = <span class="literal">true</span>,</span><br><span class="line">        Source = <span class="keyword">new</span> <span class="keyword">string</span>[] &#123; <span class="keyword">this</span>.RepositoryApiUrl &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> DotNetCorePackSettings <span class="title">BuildPackSettings</span> (<span class="params"><span class="keyword">string</span> packOutputDirectory</span>)</span> =&gt; <span class="keyword">new</span> DotNetCorePackSettings &#123;</span><br><span class="line">        Configuration = <span class="string">"Release"</span>,</span><br><span class="line">        OutputDirectory = packOutputDirectory,</span><br><span class="line">        IncludeSource = <span class="literal">true</span>,</span><br><span class="line">        IncludeSymbols = <span class="literal">true</span>,</span><br><span class="line">        NoBuild = <span class="literal">false</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">NuGetTool</span> (<span class="params">ICakeContext cakeContext</span>)</span> &#123;</span><br><span class="line">        CakeContext = cakeContext;</span><br><span class="line">        RepositoryApiUrl = cakeContext.Environment.GetEnvironmentVariable (<span class="string">"NUGET_REPOSITORY_API_URL"</span>);</span><br><span class="line">        RepositoryApiKey = cakeContext.Environment.GetEnvironmentVariable (<span class="string">"NUGET_REPOSITORY_API_KEY"</span>);</span><br><span class="line">        UserName = cakeContext.Environment.GetEnvironmentVariable (<span class="string">"USERNAME"</span>);</span><br><span class="line">        Password = cakeContext.Environment.GetEnvironmentVariable (<span class="string">"PASSWORD"</span>);</span><br><span class="line">        CakeContext.Information (<span class="string">$"获取所需参数成功：<span class="subst">&#123;RepositoryApiUrl&#125;</span>"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> NuGetTool <span class="title">FromCakeContext</span> (<span class="params">ICakeContext cakeContext</span>)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> NuGetTool (cakeContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Pack</span> (<span class="params">List&lt;<span class="keyword">string</span>&gt; projectFilePaths, <span class="keyword">string</span> packOutputDirectory</span>)</span> &#123;</span><br><span class="line">        projectFilePaths.ForEach (_ =&gt; CakeContext.DotNetCorePack (_, BuildPackSettings (packOutputDirectory)));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Push</span> (<span class="params">List&lt;<span class="keyword">string</span>&gt; packageFilePaths</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">foreach</span> (<span class="keyword">var</span> packageFilePath <span class="keyword">in</span> packageFilePaths) &#123;</span><br><span class="line">            CakeContext.NuGetAddSource (</span><br><span class="line">                <span class="string">"wigor"</span>,</span><br><span class="line">                <span class="keyword">this</span>.RepositoryApiUrl,</span><br><span class="line">                <span class="keyword">new</span> NuGetSourcesSettings &#123;</span><br><span class="line">                    UserName = <span class="keyword">this</span>.UserName,</span><br><span class="line">                    Password = <span class="keyword">this</span>.Password</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">            CakeContext.NuGetPush (packageFilePath, <span class="keyword">new</span> NuGetPushSettings &#123;</span><br><span class="line">                Source = <span class="string">"wigor"</span>,</span><br><span class="line">                ApiKey = <span class="keyword">this</span>.RepositoryApiKey</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在项目的 build/ 下创建 <code>nuget.tool.cake</code> 文件（build/nuget.tool.cake） 拷贝上面的代码。</p>
+<blockquote>
+<p>这里参考了最开始提到的园友的项目，非常感谢它的贡献，GitHub 地址如下：<a href="https://github.com/linianhui/cake.example" target="_blank" rel="noopener">cake.example</a></p>
+</blockquote>
+<p>在创建 <code>AzureDevops Artifacts</code> 的时候那不是提供了 <code>NuGet + Credentials Provider</code> 的下载地址嘛，现在把它解压到我们项目的 <code>build\tool\</code> 下。再次说明这里我是 Windows 环境，如果你的运行环境是 Linux 或其他可以在 <code>microsoft/artifacts-credprovider</code> 的 GitHub 上获取对应平台的这两个包， <a href="https://github.com/Microsoft/artifacts-credprovider" target="_blank" rel="noopener">点击查看 GitHub 地址</a>。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/31.jpg" alt="NuGet.exe、Credentials Provider"></p>
+<h1 id="修改-cake-ps1-和-build-cake-文件"><a href="#修改-cake-ps1-和-build-cake-文件" class="headerlink" title="修改 cake.ps1 和 build.cake 文件"></a>修改 cake.ps1 和 build.cake 文件</h1><p>修改 cake.ps1，只是增加了 NuGet.exe 的环境变量，因为不加到时候 cake 会找不到 NuGet.exe，或许还有其他办法这里就先这么干，如果各位还有更方便的方法可以在下面留言，感谢！</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 执行的文件</span></span><br><span class="line">[string]<span class="variable">$SCRIPT</span> = <span class="string">'build/build.cake'</span></span><br><span class="line"></span><br><span class="line">[string]<span class="variable">$CAKE_VERSION</span> = <span class="string">'0.33.0'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 配置 NuGet 环境变量</span></span><br><span class="line"><span class="variable">$NUGET_EXE</span> = <span class="string">"build/tool/NuGet.exe"</span></span><br><span class="line"><span class="variable">$NUGET_DIRECTORY</span> = <span class="built_in">Get-ChildItem</span> -Path <span class="variable">$NUGET_EXE</span></span><br><span class="line"><span class="variable">$NUGET_DIRECTORY_NAME</span>=<span class="variable">$NUGET_DIRECTORY</span>.DirectoryName</span><br><span class="line"><span class="variable">$ENV:Path</span> += <span class="string">";<span class="variable">$NUGET_DIRECTORY_NAME</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Install cake.tool</span></span><br><span class="line">dotnet tool install --global cake.tool --version <span class="variable">$CAKE_VERSION</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 参数：显需要执行cake 执行信息</span></span><br><span class="line">[string]<span class="variable">$CAKE_ARGS</span> = <span class="string">"-verbosity=diagnostic"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出将要执行的命命令</span></span><br><span class="line"><span class="built_in">Write-Host</span> <span class="string">"dotnet cake <span class="variable">$SCRIPT</span> <span class="variable">$CAKE_ARGS</span> <span class="variable">$ARGS</span>"</span> -ForegroundColor GREEN</span><br><span class="line"></span><br><span class="line">dotnet cake <span class="variable">$SCRIPT</span> <span class="variable">$CAKE_ARGS</span> <span class="variable">$ARGS</span></span><br></pre></td></tr></table></figure>
+<p>修改 build.cake 文件，看着是多了很多东西其实就多了两个 Task (任务) 分别是： <code>pack（打包）</code> 和 <code>push（推送包）</code>，这里需要大家需要修改的就是 <code>solution</code> 和 <code>project</code> 两个变量，将其修改为自己的解决方案名称和需要打包的项目名称。</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#reference "NuGet.Packaging"</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#load nuget.tool.cake</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> target = Argument (<span class="string">"target"</span>, <span class="string">"PushPack"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> rootPath = <span class="string">"../"</span>;</span><br><span class="line"><span class="keyword">var</span> srcPath = rootPath + <span class="string">"src/"</span>;</span><br><span class="line"><span class="keyword">var</span> solution = srcPath + <span class="string">"Wigor.CakePushNuGet.Example.sln"</span>;</span><br><span class="line"><span class="keyword">var</span> project = GetFiles (srcPath + <span class="string">"Wigor.CakePushNuGet.HelloWorld/*.csproj"</span>);</span><br><span class="line"><span class="keyword">var</span> nugetPakcageDirectory = <span class="string">$"<span class="subst">&#123;srcPath&#125;</span>nugetPackage/"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> nugetTool = NuGetTool.FromCakeContext (Context);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"Restore"</span>)</span><br><span class="line">  .Description (<span class="string">"还原项目依赖"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    <span class="comment">//Restore</span></span><br><span class="line">    Information (<span class="string">"开始执行还原项目依赖任务"</span>);</span><br><span class="line">    DotNetCoreRestore (solution);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"Build"</span>)</span><br><span class="line">  .Description (<span class="string">"编译项目"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"开始执行编译生成项目任务"</span>);</span><br><span class="line">    <span class="comment">//Build</span></span><br><span class="line">    DotNetCoreBuild (solution, <span class="keyword">new</span> DotNetCoreBuildSettings &#123;</span><br><span class="line">        NoRestore = <span class="literal">true</span>,</span><br><span class="line">        Configuration = <span class="string">"Release"</span></span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"UnitTest"</span>)</span><br><span class="line">  .Description (<span class="string">"单元测试"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"开始执行单元测试任务"</span>);</span><br><span class="line">    </span><br><span class="line">    DotNetCoreTest(solution);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"Pack"</span>)</span><br><span class="line">  .Description (<span class="string">"Nuget 打包"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"开始执行打包任务"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确保目录存在</span></span><br><span class="line">    EnsureDirectoryExists (nugetPakcageDirectory);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> packageFilePaths = project.Select (_ =&gt; _.FullPath).ToList ();</span><br><span class="line"></span><br><span class="line">    nugetTool.Pack (packageFilePaths, nugetPakcageDirectory);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"Push"</span>)</span><br><span class="line">  .Description (<span class="string">"Nuget 发布"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"开始执行 Nuget 包发布任务"</span>);</span><br><span class="line">    <span class="keyword">var</span> packageFilePaths = GetFiles (<span class="string">$"<span class="subst">&#123;nugetPakcageDirectory&#125;</span>*.symbols.nupkg"</span>).Select (_ =&gt; _.FullPath).ToList ();</span><br><span class="line"></span><br><span class="line">    nugetTool.Push(packageFilePaths);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">Task (<span class="string">"PushPack"</span>)</span><br><span class="line">  .Description (<span class="string">"发布 Nuget 包"</span>)</span><br><span class="line">  .IsDependentOn (<span class="string">"Restore"</span>)</span><br><span class="line">  .IsDependentOn (<span class="string">"Build"</span>)</span><br><span class="line">  .IsDependentOn (<span class="string">"Pack"</span>)</span><br><span class="line">  .IsDependentOn (<span class="string">"Push"</span>)</span><br><span class="line">  .Does (() =&gt; &#123;</span><br><span class="line">    Information (<span class="string">"所有任务完成"</span>);</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">RunTarget (target);</span><br></pre></td></tr></table></figure>
+<p>最后我们推送修改后的代码，查看执行结果看看 NuGet 包是否发布到 <code>AzureDevops Artifacts</code> 上。</p>
+<p><img src="https://raw.githubusercontent.com/WuMortal/CakePushNuGet.Example/master/doc/images/32.png" alt="结果"></p>
+<p>至此已经实现了 使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上，你如果不熟悉 <code>AzureDevops Pipelines</code> 你也可以用其他的 CI/CD 工具来执行。</p>
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><p>在整个尝试过程中肯定会出现一些问题，不要着急认真分析，看看 <code>AzureDevops Pipelines</code> 上给出的提示，也可以现在本机跑一下看看是否正常。出现问题第一步查看错误信息，看看有没有错误信息（基本都有），然后根据错误信息去分析是我们的那个地方出错了，顺序是 cake.ps1 –&gt; build.cake –&gt; nuget.tool.cake，然后是所需的 PAT 的权限是否勾选，<code>AzureDevops Pipelines</code> 变量是否配置并且是 URL、Key 什么的都是正确，再然后就是 百度、Google。最后你可以在评论区留言（分享你碰到的问题以及解决方法）。</p>
+<h1 id="相关文献"><a href="#相关文献" class="headerlink" title="相关文献"></a>相关文献</h1><p>在这里感谢各位的贡献！</p>
+<blockquote>
+<p><a href="https://www.cnblogs.com/linianhui/p/cake-overview.html" target="_blank" rel="noopener">《[Cake] 0. C#Make自动化构建-简介》</a></p>
+<p><a href="https://www.cnblogs.com/linianhui/p/cake-with-dotnet-tool.html" target="_blank" rel="noopener">《2. dotnet 全局工具 cake》</a></p>
+<p><a href="https://neilq.github.io/2018/04/18/dotnet-ci-base-on-cake-build/" target="_blank" rel="noopener">《基于cake-build的dotnet自动化发布》</a></p>
+<p><a href="https://daveaglick.com/posts/pushing-packages-from-azure-pipelines-to-azure-artifacts-using-cake" target="_blank" rel="noopener">《Pushing Packages From Azure Pipelines To Azure Artifacts Using Cake》</a></p>
+<p><a href="https://docs.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&amp;tabs=yaml%2Cbatch" target="_blank" rel="noopener">AzureDevops Pipelines 变量相关文档</a></p>
+<p><a href="https://blog.csdn.net/playermaker57/article/details/86760521" target="_blank" rel="noopener">《认识一下 Azure DevOps》</a><br><a href="https://github.com/WuMortal/CakePushNuGet.Example" target="_blank" rel="noopener">参考项目：CakePushNuGet.Example </a></p>
+<p><a href="https://github.com/linianhui/cake.example" target="_blank" rel="noopener">参考项目：cake.example </a></p>
+</blockquote>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+	
+		
+	
+      
+	   
+
+		 <div>    
+          
+          <blockquote class="post-copyright">
+             <div class="post-copyright-link">
+              <strong>本文作者：</strong>
+              <a href="/" title="欢迎访问 Wigor 的个人博客">Wigor</a>
+            </div>
+
+            <div class="post-copyright-link">
+              <strong>本文标题：</strong>
+              <a href="https://blog.wigor.ltd/2019/06/27/cake-push-nuget-to-Artifacts/" title="使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上">使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上</a>
+            </div>
+
+            <div class="post-copyright-link">
+              <strong>本文链接：</strong>
+              <a href="https://blog.wigor.ltd/2019/06/27/cake-push-nuget-to-Artifacts/" title="使用 Cake 推送 NuGet 包到 AzureDevops 的 Artifacts 上">https://blog.wigor.ltd/2019/06/27/cake-push-nuget-to-Artifacts/</a>
+            </div>
+
+            <div class="post-copyright-date">
+                <strong>发布时间： </strong>2019年6月27日 - 10时06分
+            </div>  
+
+            <div class="post-copyright-license">
+              <strong>版权声明： </strong>
+              本文由 Wigor 原创。
+            </div>
+          </blockquote>
+        
+      </div>
+      
+        <div class="post-tags">
+          
+            <a href="/tags/git/" rel="tag"># git</a>
+          
+            <a href="/tags/知识整理/" rel="tag"># 知识整理</a>
+          
+            <a href="/tags/DotNetCore/" rel="tag"># DotNetCore</a>
+          
+            <a href="/tags/CI-CD/" rel="tag"># CI/CD</a>
+          
+            <a href="/tags/AzureDevOps/" rel="tag"># AzureDevOps</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/13/improve-chinese/" rel="next" title="余光中：怎样改进英式中文？- 论中文的常态与变态">
+                <i class="fa fa-chevron-left"></i> 余光中：怎样改进英式中文？- 论中文的常态与变态
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/01/Money-oder-das/" rel="prev" title="《小狗钱钱》笔记整理">
+                《小狗钱钱》笔记整理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars2.githubusercontent.com/u/25811487?s=460&v=4" alt="Wigor">
+            
+              <p class="site-author-name" itemprop="name">Wigor</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">10</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">6</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">16</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/WuMortal" title="GitHub &rarr; https://github.com/WuMortal" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:wumortal@Outlook.com" title="E-Mail &rarr; mailto:wumortal@Outlook.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-E-Mail"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#介绍"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Cake-安装和使用"><span class="nav-number">3.</span> <span class="nav-text">Cake 安装和使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AzureDevops-Pipelines-使用"><span class="nav-number">4.</span> <span class="nav-text">AzureDevops Pipelines 使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AzureDevops-Artifacts-使用"><span class="nav-number">5.</span> <span class="nav-text">AzureDevops Artifacts 使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#创建-PAT-Personal-Access-Tokens"><span class="nav-number">6.</span> <span class="nav-text">创建 PAT (Personal Access Tokens)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AzureDevops-Pipelines-添加变量"><span class="nav-number">7.</span> <span class="nav-text">AzureDevops Pipelines 添加变量</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#添加-NuGet-Tool-cake-和-NuGet-exe、Credentials-Provider"><span class="nav-number">8.</span> <span class="nav-text">添加 NuGet.Tool.cake 和 NuGet.exe、Credentials Provider</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#修改-cake-ps1-和-build-cake-文件"><span class="nav-number">9.</span> <span class="nav-text">修改 cake.ps1 和 build.cake 文件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#补充"><span class="nav-number">10.</span> <span class="nav-text">补充</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#相关文献"><span class="nav-number">11.</span> <span class="nav-text">相关文献</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Wigor</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/schemes/muse.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+<script src="//cdn1.lncld.net/static/js/3.11.1/av-min.js"></script>
+
+
+
+<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+<script>
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#comments',
+    verify: true,
+    notify: false,
+    appId: 'Lenj72VxE2lnKUyj4jukeMH9-gzGzoHsz',
+    appKey: 'Gu7nwtGgKRgO9kSgoQQOpP7s',
+    placeholder: '想对我对我说点啥？',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+</script>
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function(i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function(e) {
+        var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('复制成功');
+          else $(this).text('复制失败');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function(e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function() {
+          $b.text('复制');
+        }, 300);
+      }).append(e);
+    })
+  </script>
+
+
+  
+
+</body>
+</html>
